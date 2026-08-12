@@ -30,6 +30,7 @@
 #include "config.h"
 #include "cli.h"
 #include "commands.h"
+#include "board_defs.h"
 
 struct __attribute__((packed)) {
     uint16_t buttons;
@@ -232,6 +233,7 @@ void init()
 
     bool tt_present = turntable_init();
 
+#if BOARD_HAS_HALL_KEYS
     if ((tt_present) && (turntable_is_alternative())) {
         // identify hall version by sensor's i2c port
         is_hall_board = true;
@@ -243,8 +245,9 @@ void init()
         hebtn_init();
         is_hall_board = (hebtn_presence_map() > 0);
     }
+#endif
 
-    rgb_init(is_hall_board);
+    rgb_init(BOARD_HAS_ALT_TT_RGB && is_hall_board);
 
     tt_rainbow_init();
     tt_blade_init();
