@@ -10,7 +10,7 @@ function(make_firmware board board_def)
                    usb_descriptors.c)
 
     if(board_def STREQUAL "BOARD_IIDX_TIMSUO_V1")
-        target_sources(${board} PRIVATE uc1701x.c)
+        target_sources(${board} PRIVATE uc1701x.c display.c font_6x8.c)
     endif()
 
 
