@@ -17,8 +17,14 @@
 
 #include "setup.h"
 
+#include "board_defs.h"
 #include "buttons.h"
 #include "control_input.h"
+#if BOARD_HAS_LCD
+#include "display.h"
+#include "status_screen.h"
+#include "uc1701x.h"
+#endif
 #include "hebtn.h"
 #include "rgb.h"
 #include "turntable.h"
@@ -31,7 +37,6 @@
 #include "config.h"
 #include "cli.h"
 #include "commands.h"
-#include "board_defs.h"
 
 struct __attribute__((packed)) {
     uint16_t buttons;
@@ -192,6 +197,9 @@ static bool is_hall_board = false;
 static void core0_loop()
 {
     absolute_time_t next_frame = {0};
+#if BOARD_HAS_LCD
+    uint64_t next_display_render = 0;
+#endif
 
     while (true)
     {
@@ -208,6 +216,14 @@ static void core0_loop()
         uint16_t buttons = hybrid_button_read();
         uint16_t abs_angle = turntable_read_abs(8);
         setup_run(control_input_update(buttons), abs_angle);
+
+#if BOARD_HAS_LCD
+        uint64_t now = time_us_64();
+        if (now >= next_display_render) {
+            status_screen_render(buttons, abs_angle);
+            next_display_render = now + 50000;
+        }
+#endif
 
         bool ov_tt = setup_needs_tt_led();
         bool ov_btn = setup_needs_button_led();
@@ -228,6 +244,9 @@ static void core0_loop()
         }
 
         report_usb_hid();
+#if BOARD_HAS_LCD
+        display_task();
+#endif
         cli_fps_count(0);
 
         sleep_until(next_frame);
@@ -238,6 +257,10 @@ static void core0_loop()
 void init()
 {
     board_init();
+#if BOARD_HAS_LCD
+    uc1701x_init();
+    display_clear();
+#endif
     tusb_init();
     
     button_init();
