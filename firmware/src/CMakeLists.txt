@@ -9,6 +9,10 @@ function(make_firmware board board_def)
                    tt_rainbow.c tt_blade.c tt_heatbar.c
                    usb_descriptors.c)
 
+    if(board_def STREQUAL "BOARD_IIDX_TIMSUO_V1")
+        target_sources(${board} PRIVATE uc1701x.c)
+    endif()
+
 
     target_compile_definitions(${board} PUBLIC ${board_def}
                                PICO_XOSC_STARTUP_DELAY_MULTIPLIER=20)
@@ -27,7 +31,7 @@ function(make_firmware board board_def)
     
     target_link_libraries(${board} PRIVATE
         pico_multicore pico_stdlib hardware_pio hardware_pwm hardware_flash
-        hardware_adc hardware_i2c hardware_watchdog
+        hardware_adc hardware_i2c hardware_spi hardware_watchdog
         tinyusb_device tinyusb_board)
 
     pico_add_extra_outputs(${board})
