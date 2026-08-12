@@ -1,0 +1,156 @@
+name: Build Pico Firmware
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "firmware/**"
+      - ".github/workflows/build-firmware.yml"
+
+  pull_request:
+    paths:
+      - "firmware/**"
+      - ".github/workflows/build-firmware.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build RP2040 firmware
+    runs-on: ubuntu-24.04
+
+    steps:
+      # ------------------------------------------------------------
+      # Checkout iidx_pico
+      # ------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # ------------------------------------------------------------
+      # Checkout a pinned Raspberry Pi Pico SDK
+      # ------------------------------------------------------------
+      - name: Checkout Pico SDK
+        uses: actions/checkout@v6
+        with:
+          repository: raspberrypi/pico-sdk
+          ref: 2.3.0
+          path: pico-sdk
+          submodules: recursive
+          fetch-depth: 1
+          persist-credentials: false
+
+      # ------------------------------------------------------------
+      # Install RP2040 build dependencies
+      # ------------------------------------------------------------
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            gcc-arm-none-eabi \
+            libnewlib-arm-none-eabi \
+            libstdc++-arm-none-eabi-newlib
+
+      # ------------------------------------------------------------
+      # Configure
+      # ------------------------------------------------------------
+      - name: Configure CMake
+        env:
+          PICO_SDK_PATH: ${{ github.workspace }}/pico-sdk
+        run: |
+          cmake \
+            -S firmware \
+            -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPICO_BOARD=pico \
+            -DPICO_SDK_PATH="${PICO_SDK_PATH}"
+
+      # ------------------------------------------------------------
+      # Build both firmware targets
+      # ------------------------------------------------------------
+      - name: Build firmware
+        run: |
+          cmake \
+            --build build \
+            --target iidx_pico iidx_timsuo \
+            --parallel
+
+      # ------------------------------------------------------------
+      # Verify UF2 output
+      # ------------------------------------------------------------
+      - name: Verify firmware output
+        run: |
+          test -f build/src/iidx_pico.uf2
+          test -f build/src/iidx_timsuo.uf2
+
+          echo "Generated firmware:"
+          ls -lh \
+            build/src/iidx_pico.uf2 \
+            build/src/iidx_timsuo.uf2
+
+          echo
+          echo "SHA-256:"
+          sha256sum \
+            build/src/iidx_pico.uf2 \
+            build/src/iidx_timsuo.uf2
+
+      # ------------------------------------------------------------
+      # Prepare downloadable files
+      # ------------------------------------------------------------
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+
+          cp build/src/iidx_pico.uf2 \
+             artifacts/iidx_pico.uf2
+
+          cp build/src/iidx_timsuo.uf2 \
+             artifacts/iidx_timsuo.uf2
+
+      # ------------------------------------------------------------
+      # Upload to GitHub Actions
+      # ------------------------------------------------------------
+      - name: Upload firmware
+        uses: actions/upload-artifact@v7
+        with:
+          name: iidx-pico-firmware-${{ github.sha }}
+          path: artifacts/*.uf2
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      # ------------------------------------------------------------
+      # Add a useful Actions summary
+      # ------------------------------------------------------------
+      - name: Build summary
+        run: |
+          {
+            echo "## IIDX Pico firmware build"
+            echo
+            echo "| Firmware | Target |"
+            echo "|---|---|"
+            echo "| \`iidx_pico.uf2\` | Original BOARD_IIDX_PICO |"
+            echo "| \`iidx_timsuo.uf2\` | BOARD_IIDX_TIMSUO_V1 |"
+            echo
+            echo "### SHA-256"
+            echo
+            echo '```text'
+            sha256sum artifacts/*.uf2
+            echo '```'
+            echo
+            echo "Pico SDK: \`2.3.0\`"
+            echo
+            echo "Commit: \`${GITHUB_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
