@@ -40,11 +40,14 @@ static void init_port(bool use_primary)
         sensor_i2c = TT_SENSOR_I2C;
         i2c_scl = TT_SENSOR_SCL;
         i2c_sda = TT_SENSOR_SDA;
-    } else {
+    }
+#if BOARD_HAS_SECONDARY_TT_I2C
+    else {
         sensor_i2c = TT_SENSOR_I2C_2;
         i2c_scl = TT_SENSOR_SCL_2;
         i2c_sda = TT_SENSOR_SDA_2;
     }
+#endif
 
     gpio_init(i2c_scl);
     gpio_init(i2c_sda);
@@ -92,11 +95,13 @@ static bool identify_sensor()
 
 bool turntable_init()
 {
+#if BOARD_HAS_SECONDARY_TT_I2C
     init_port(false);
     if (identify_sensor()) {
         return true;
     }
     deinit_port();
+#endif
 
     init_port(true);
     if (identify_sensor()) {
@@ -109,7 +114,11 @@ bool turntable_init()
 
 bool turntable_is_alternative()
 {
+#if BOARD_HAS_SECONDARY_TT_I2C
     return sensor_i2c == TT_SENSOR_I2C_2;
+#else
+    return false;
+#endif
 }
 
 #define ANGLE_BITS 14

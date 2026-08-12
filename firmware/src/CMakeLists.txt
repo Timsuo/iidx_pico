@@ -40,4 +40,5 @@ function(make_firmware board board_def)
 endfunction()
 
 make_firmware(iidx_pico BOARD_IIDX_PICO)
+make_firmware(iidx_timsuo BOARD_IIDX_TIMSUO_V1)
 

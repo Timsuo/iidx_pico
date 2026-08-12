@@ -18,6 +18,8 @@
 
 #include "config.h"
 
+#if BOARD_HAS_HALL_KEYS
+
 #define KEY_NUM HALL_KEY_NUM
 
 #define HALL_PRESENCE_THRESHOLD 500 // about 0.4V on 3.3V reference
@@ -316,3 +318,27 @@ void hebtn_calibrate()
 
     config_changed();
 }
+
+#else
+
+void hebtn_init() {}
+void hebtn_update() {}
+
+uint8_t hebtn_keynum() { return 0; }
+
+bool hebtn_any_present() { return false; }
+bool hebtn_present(uint8_t chn) { return false; }
+bool hebtn_actuated(uint8_t chn) { return false; }
+
+uint32_t hebtn_presence_map() { return 0; }
+uint32_t hebtn_actuated_map() { return 0; }
+
+uint16_t hebtn_range(uint8_t chn) { return 0; }
+uint16_t hebtn_travel(uint8_t chn) { return 0; }
+uint8_t hebtn_travel_byte(uint8_t chn) { return 0; }
+uint8_t hebtn_trigger_byte(uint8_t chn) { return 0; }
+uint16_t hebtn_raw(uint8_t chn) { return 0; }
+
+void hebtn_calibrate() {}
+
+#endif
