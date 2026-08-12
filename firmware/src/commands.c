@@ -72,11 +72,44 @@ static void disp_hall()
     }
 }
 
+static void disp_hid()
+{
+    printf("[HID]\n");
+    printf("  Mode: %s\n", iidx_cfg->hid.konami ? "KONAMI" : "BEATORAJA");
+}
+
 static void handle_display()
 {
     disp_rgb();
     disp_sensor();
     disp_hall();
+    disp_hid();
+}
+
+static void handle_hid(int argc, char *argv[])
+{
+    const char *usage = "Usage: hid [beatoraja|konami]\n";
+
+    if (argc == 0) {
+        printf("HID mode: %s\n", iidx_cfg->hid.konami ? "KONAMI" : "BEATORAJA");
+        return;
+    }
+
+    if (argc != 1) {
+        printf(usage);
+        return;
+    }
+
+    const char *choices[] = { "beatoraja", "konami" };
+    int mode = cli_match_prefix(choices, count_of(choices), argv[0]);
+    if (mode < 0) {
+        printf(usage);
+        return;
+    }
+
+    iidx_cfg->hid.konami = (mode == 1);
+    config_changed();
+    printf("HID mode saved. Reboot required.\n");
 }
 
 static void handle_calibrate(int argc, char *argv[])
@@ -168,6 +201,7 @@ static void handle_stat(int argc, char *argv[])
 void commands_init()
 {
     cli_register("display", handle_display, "Display current config.");
+    cli_register("hid", handle_hid, "Display or set the HID mode.");
     cli_register("calibrate", handle_calibrate, "Calibrate the key sensors.");
     cli_register("suppress-hall", handle_suppress_hall, "Suppress hall effect button.");
     cli_register("trigger", handle_trigger, "Set Hall effect switch triggering.");
