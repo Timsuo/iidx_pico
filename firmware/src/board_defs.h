@@ -8,6 +8,7 @@
 #define BOARD_HAS_SECONDARY_TT_I2C 1
 #define BOARD_HAS_ALT_TT_RGB 1
 #define BOARD_HAS_LCD 0
+#define BOARD_HAS_PHYSICAL_AUX_KEYS 1
 
 /* List of button pins */
 #define BUTTON_DEF { 8, 7, 6, 5, 4, 3, 2, 12, 11, 10, 9, 1, 0 }
@@ -46,6 +47,7 @@
 #define BOARD_HAS_SECONDARY_TT_I2C 0
 #define BOARD_HAS_ALT_TT_RGB 0
 #define BOARD_HAS_LCD 1
+#define BOARD_HAS_PHYSICAL_AUX_KEYS 0
 
 /* KEY1..KEY7, then E1..E4. */
 #define BUTTON_DEF { 8, 7, 6, 5, 4, 3, 2, 12, 11, 10, 9 }

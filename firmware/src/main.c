@@ -18,6 +18,7 @@
 #include "setup.h"
 
 #include "buttons.h"
+#include "control_input.h"
 #include "hebtn.h"
 #include "rgb.h"
 #include "turntable.h"
@@ -196,7 +197,7 @@ static void core0_loop()
 
         uint16_t buttons = hybrid_button_read();
         uint16_t abs_angle = turntable_read_abs(8);
-        setup_run(buttons, abs_angle);
+        setup_run(control_input_update(buttons), abs_angle);
 
         bool ov_tt = setup_needs_tt_led();
         bool ov_btn = setup_needs_button_led();
