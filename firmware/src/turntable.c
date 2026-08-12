@@ -34,6 +34,8 @@ typedef enum {
 } sensor_type_t;
 static sensor_type_t sensor_type = SENSOR_UNKNOWN;
 
+static const uint16_t ppr_values[8] = { 200, 128, 64, 32, 256, 160, 96, 48 };
+
 static void init_port(bool use_primary)
 {
     if (use_primary) {
@@ -196,8 +198,7 @@ uint32_t turntable_read(uint8_t bits)
         delta += ANGLE_RANGE;
     }
 
-    const uint16_t divs[8] = { 200, 128, 64, 32, 256, 160, 96, 48};
-    uint16_t step = ANGLE_RANGE / divs[iidx_cfg->sensor.ppr & 7];
+    uint16_t step = ANGLE_RANGE / turntable_ppr();
 
     if (abs(delta) >= step) {
         if (delta > 0) {
@@ -232,4 +233,9 @@ const char *turntable_sensor_name()
         default:
             return "Unknown";
     }
+}
+
+uint16_t turntable_ppr()
+{
+    return ppr_values[iidx_cfg->sensor.ppr & 7];
 }
