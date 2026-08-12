@@ -64,16 +64,24 @@ void report_usb_hid()
 
 void boot_check()
 {
+#if BOARD_HAS_PHYSICAL_AUX_KEYS
     uint16_t key1 = (1 << AUX_1_BIT);
     uint16_t key2 = (1 << AUX_2_BIT);
     uint16_t buttons = button_read();
     if (!watchdog_caused_reboot() && (buttons & key1) && (buttons & key2)) {
         reset_usb_boot(0, 2);
     }
+#else
+    uint16_t e_buttons = button_read() & CONTROL_E_MASK;
+    if (!watchdog_caused_reboot() && (e_buttons == CONTROL_E_MASK)) {
+        reset_usb_boot(0, 2);
+    }
+#endif
 }
  
 void mode_check()
 {
+#if BOARD_HAS_PHYSICAL_AUX_KEYS
     uint16_t key1 = (1 << AUX_1_BIT);
     uint16_t key2 = (1 << AUX_2_BIT);
     uint16_t buttons = button_read();
@@ -84,17 +92,19 @@ void mode_check()
         iidx_cfg->hid.konami = false;
         savedata_save(false);
     }
+#else
+    uint16_t e_buttons = button_read() & CONTROL_E_MASK;
+    if (e_buttons == (CONTROL_E1 | CONTROL_E2)) {
+        iidx_cfg->hid.konami = true;
+        savedata_save(false);
+    } else if (e_buttons == (CONTROL_E3 | CONTROL_E4)) {
+        iidx_cfg->hid.konami = false;
+        savedata_save(false);
+    }
+#endif
 
     if (iidx_cfg->hid.konami) {
         switch_to_konami_mode();
-    }
-}
-
-static void factory_check()
-{
-    uint16_t e_mask = (1 << E1_BIT) | (1 << E2_BIT) | (1 << E3_BIT) | (1 << E4_BIT);
-    if ((button_read() & e_mask) == e_mask) {
-        config_factory_reset();
     }
 }
 
@@ -261,7 +271,6 @@ void init()
     config_init();
     savedata_init(0xca341125);
 
-    factory_check();
     mode_check();
 
     cli_init("iidx_pico>", "\n   << IIDX Pico|Teeny Controller >>\n"
